@@ -1,0 +1,89 @@
+
+new_buttons.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+back_active
+  rotate: false
+  xy: 0, 350
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+back_inactive
+  rotate: false
+  xy: 0, 280
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+create_active
+  rotate: false
+  xy: 400, 350
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+create_inactive
+  rotate: false
+  xy: 0, 210
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+join_active
+  rotate: false
+  xy: 400, 280
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+join_inactive
+  rotate: false
+  xy: 0, 140
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+start_active
+  rotate: false
+  xy: 400, 210
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+start_inactive
+  rotate: false
+  xy: 0, 70
+  size: 400, 70
+  orig: 400, 70
+  offset: 0, 0
+  index: -1
+left_active
+  rotate: false
+  xy: 800, 350
+  size: 79, 70
+  orig: 79, 70
+  offset: 0, 0
+  index: -1
+left_inactive
+  rotate: false
+  xy: 400, 140
+  size: 79, 70
+  orig: 79, 70
+  offset: 0, 0
+  index: -1
+right_active
+  rotate: false
+  xy: 0, 0
+  size: 79, 70
+  orig: 79, 70
+  offset: 0, 0
+  index: -1
+right_inactive
+  rotate: false
+  xy: 800, 280
+  size: 79, 70
+  orig: 79, 70
+  offset: 0, 0
+  index: -1

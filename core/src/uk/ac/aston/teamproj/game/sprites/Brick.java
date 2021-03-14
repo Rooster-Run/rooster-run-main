@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.World;
 
 import uk.ac.aston.teamproj.game.MainGame;
-import uk.ac.aston.teamproj.game.screens.PlayScreen;
+import uk.ac.aston.teamproj.game.net.MPClient;
 
 public class Brick extends InteractiveTileObject {
 
@@ -20,7 +20,7 @@ public class Brick extends InteractiveTileObject {
 
 	@Override
 	public void onHit() {
-		Gdx.app.log(String.valueOf(PlayScreen.clientID), "Brick Collision");	
+		Gdx.app.log(String.valueOf(MPClient.clientID), "Brick Collision edit ");	
 	} 
 	
 	

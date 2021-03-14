@@ -7,8 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.World;
 
 import uk.ac.aston.teamproj.game.MainGame;
-import uk.ac.aston.teamproj.game.net.MPServer;
-import uk.ac.aston.teamproj.game.screens.PlayScreen;
+import uk.ac.aston.teamproj.game.net.MPClient;
 
 public class Mud extends InteractiveTileObject {
 
@@ -21,7 +20,7 @@ public class Mud extends InteractiveTileObject {
 	
 	@Override
 	public void onHit() {
-		Gdx.app.log(String.valueOf(PlayScreen.clientID), "Mud Collision");
+		Gdx.app.log(String.valueOf(MPClient.clientID), "Mud Collision");
 		//set category to destroyed bit
 		//setCategoryFilter(MainGame.DESTROYED_BIT);
 		//getCell().setTile(null);

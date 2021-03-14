@@ -1,6 +1,7 @@
 package uk.ac.aston.teamproj.game.sprites;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Rectangle;
@@ -27,6 +28,9 @@ public class EndPlane extends InteractiveTileObject {
 	public void onHit() {
 		//for now, just log the event to the console
 		Gdx.app.log("PLANE", "Collision");
+		
+		Sound sound = Gdx.audio.newSound(Gdx.files.internal("firstplace.wav"));
+        sound.play(1F);
 		
 		//set category to destroyed bit
 		//getCell().setTile(null);

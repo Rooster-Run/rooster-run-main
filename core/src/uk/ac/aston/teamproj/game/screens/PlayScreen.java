@@ -1,7 +1,7 @@
 package uk.ac.aston.teamproj.game.screens;
 
 import java.util.HashMap;
-
+import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -24,16 +24,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import uk.ac.aston.teamproj.game.MainGame;
-import uk.ac.aston.teamproj.game.net.MPClient;
-import uk.ac.aston.teamproj.game.net.MPServer;
-import uk.ac.aston.teamproj.game.net.packet.MovementJump;
-import uk.ac.aston.teamproj.game.net.packet.MovementLeft;
-import uk.ac.aston.teamproj.game.net.packet.MovementP2Jump;
-import uk.ac.aston.teamproj.game.net.packet.MovementP2Left;
-import uk.ac.aston.teamproj.game.net.packet.MovementP2Right;
-import uk.ac.aston.teamproj.game.net.packet.MovementRight;
 import uk.ac.aston.teamproj.game.scenes.Hud;
-import uk.ac.aston.teamproj.game.scenes.Hud2;
+import uk.ac.aston.teamproj.game.scenes.PlayerProgressBar;
 import uk.ac.aston.teamproj.game.sprites.Bomb;
 import uk.ac.aston.teamproj.game.sprites.Rooster;
 import uk.ac.aston.teamproj.game.tools.B2WorldCreator;
@@ -41,7 +33,7 @@ import uk.ac.aston.teamproj.game.tools.WorldContactListener;
 
 public class PlayScreen implements Screen {
 
-	private static final int SCORE_LOC = 400 * 6; // increment score every 400 units
+	private static final String DEFAULT_MAP_PATH = "map_beginner_fix";
 
 	private MainGame game;
 	private TextureAtlas atlas; // sprite sheet that wraps all images
@@ -51,7 +43,6 @@ public class PlayScreen implements Screen {
 	private OrthographicCamera gamecam;
 	private Viewport gamePort;
 	private Hud hud;
-	private Hud2 hud2;
 
 	// Tiled map variables
 	private TmxMapLoader mapLoader;
@@ -64,22 +55,20 @@ public class PlayScreen implements Screen {
 
 	// Sprites
 	public static Rooster player;
-	public static Rooster player2;
 
 	// counts the number of consecutive jumps for each rooster
 	private static final int MAX_JUMPS = 2;
-	private int jumpCount1 = 0;
-	private int jumpCount2 = 0;
-	
-	// multiplayer
-	public static int clientID;
+	private int jumpCount = 0;
+
 	private HashMap<Bomb, Float> toExplode = new HashMap<>();
 	
+	public static int score;
+	public static int coins;
 	
-
-	public PlayScreen(MainGame game, int clientID) {
+	private final PlayerProgressBar progressBar;
+	
+	public PlayScreen(MainGame game, String mapPath) {
 		this.game = game;
-		PlayScreen.clientID = clientID;
 		this.atlas = new TextureAtlas("new_sprite_sheet/new_chicken.pack");
 
 		// Create a cam to follow chicken in the game world
@@ -90,11 +79,12 @@ public class PlayScreen implements Screen {
 
 		// Create our game HUD for scores /timers/level info/players in the game etc
 		hud = new Hud(game.batch);
-		hud2 = new Hud2(game.batch);
+		progressBar = new PlayerProgressBar(game.batch);
 
 		// Load our map and setup our map renderer
 		mapLoader = new TmxMapLoader();
-		map = mapLoader.load("map_beginner_fix" + ".tmx");
+		String correctMapPath = (mapPath != null)? mapPath : DEFAULT_MAP_PATH;
+		map = mapLoader.load(correctMapPath + ".tmx");
 		renderer = new OrthogonalTiledMapRenderer(map, 1 / MainGame.PPM);
 
 		// Initially set our game cam to be centered correctly at the start of the map
@@ -109,15 +99,14 @@ public class PlayScreen implements Screen {
 		new B2WorldCreator(world, map);
 
 		// Create rooster in the world
-		player = new Rooster(world, this, MPServer.playerCount.get(0));
-		player2 = new Rooster(world, this, MPServer.playerCount.get(1));
+		player = new Rooster(world, this);
 
 		// make the world react of object collision
-		if(clientID == 1) {
-			world.setContactListener(new WorldContactListener(this, player));
-		} else {
-			world.setContactListener(new WorldContactListener(this, player2));
-		}
+
+		world.setContactListener(new WorldContactListener(this));
+
+//		Sound sound = Gdx.audio.newSound(Gdx.files.internal("game_soundtrack.mp3"));
+//        sound.play(1F);
 	}
 
 	@Override
@@ -128,77 +117,28 @@ public class PlayScreen implements Screen {
 
 	public void handleInput(float dt) {
 		// If our user is holding down mouse over camera throughout the game world.
-		if (clientID == MPServer.playerCount.get(0)) {
-			if (player.currentState != Rooster.State.DEAD) {
-				if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && jumpCount1 < MAX_JUMPS) {
+		if (player.currentState != Rooster.State.DEAD) {
+			if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && jumpCount < MAX_JUMPS) {
 
+				 //plays button swoosh sound
+				Sound sound = Gdx.audio.newSound(Gdx.files.internal("electric-transition-super-quick-www.mp3"));
+                sound.play(1F);
 
-					 //plays button swoosh sound
-					Sound sound = Gdx.audio.newSound(Gdx.files.internal("electric-transition-super-quick-www.mp3"));
-	                sound.play(1F);
+                player.b2body.setLinearVelocity(player.b2body.getLinearVelocity().x, 3f);
 
-				
-					MovementJump pos = new MovementJump();
-					pos.x = player.getPositionX();
-					pos.x2 = player2.getPositionX();
-					MPClient.client.sendTCP(pos);
-					
-					jumpCount1++;
-				}
-
-				if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-					MovementRight pos = new MovementRight();
-					pos.x = player.getPositionX();
-					pos.x2 = player2.getPositionX();
-					MPClient.client.sendTCP(pos);
-				}
-
-				if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-					MovementLeft pos = new MovementLeft();
-					pos.x = player.getPositionX();
-					pos.x2 = player2.getPositionX();
-					MPClient.client.sendTCP(pos);
-				}
+				jumpCount++;
 			}
-		}
-		
-		if (clientID == MPServer.playerCount.get(1)) {
-			if (player2.currentState != Rooster.State.DEAD) {
-				if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && jumpCount2 < MAX_JUMPS) {	
-					Sound sound = Gdx.audio.newSound(Gdx.files.internal("electric-transition-super-quick-www.mp3"));
-	                sound.play(1F);
-					
-					MovementP2Jump pos = new MovementP2Jump();
-					pos.x = player.getPositionX();
-					pos.x2 = player2.getPositionX();
-					MPClient.client.sendTCP(pos);
-					
-					jumpCount2++;
-				}
 
-				if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) { 
-					MovementP2Right pos = new MovementP2Right();
-					pos.x = player.getPositionX();
-					pos.x2 = player2.getPositionX();
-					MPClient.client.sendTCP(pos);
-				}
-
-				if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) 
-				{
-					MovementP2Left pos = new MovementP2Left();
-					pos.x = player.getPositionX();
-					pos.x2 = player2.getPositionX();
-					MPClient.client.sendTCP(pos);
-				}
+			if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+                player.b2body.setLinearVelocity(1.0f, player.b2body.getLinearVelocity().y);
 			}
+
+			if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+                player.b2body.setLinearVelocity(-1.0f, player.b2body.getLinearVelocity().y);
+			}
+			
 		}
-		
-        if(Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
-            System.out.println(clientID + " : rooster1 " + player.getPositionX());
-            
-            System.out.println(clientID + " : rooster2 " + player2.getPositionX());
-        }
-        
+
 	}
 
 	/*
@@ -213,26 +153,21 @@ public class PlayScreen implements Screen {
 
 		// update player based on delta time
 		player.update(dt);
-		player2.update(dt);
 
 		// update score based on location
-		if (player.getPositionX() * MainGame.PPM > (hud.getScore() + 1) * SCORE_LOC) {
-			hud.updateScore();
-		}
-		if (player2.getPositionX() * MainGame.PPM > (hud2.getScore() + 1) * SCORE_LOC) {
-			hud2.updateScore();
-		}
+//		if (player.getPositionX() * MainGame.PPM > (hud.getScore() + 1) * SCORE_LOC) {
+//			hud.updateScore();
+//		}
+//		if (player2.getPositionX() * MainGame.PPM > (hud2.getScore() + 1) * SCORE_LOC) {
+//			hud2.updateScore();
+//		}
+		if (player.currentState != Rooster.State.DEAD)
+			progressBar.updateProgress(player.getPositionX());
 
 		// Everytime chicken moves we want to track him with our game cam
-		if (clientID == MPServer.playerCount.get(0))
-			if (player.currentState != Rooster.State.DEAD) {
-				gamecam.position.x = player.getPositionX();
-			}
-
-		if (clientID == MPServer.playerCount.get(1))
-			if (player2.currentState != Rooster.State.DEAD) {
-				gamecam.position.x = player2.getPositionX();
-			}
+		if (player.currentState != Rooster.State.DEAD) {
+			gamecam.position.x = player.getPositionX();
+		}
 
 		// Update our gamecam with correct coordinates after changes
 		gamecam.update();
@@ -249,8 +184,10 @@ public class PlayScreen implements Screen {
 		renderer.setView(gamecam.combined, x, y, w, h); // Only render what our game can see
 //        renderer.setView(gamecam);
 
-		if (!toExplode.isEmpty()) {
-			for (HashMap.Entry<Bomb, Float> entry : toExplode.entrySet()) {
+			//for (HashMap.Entry<Bomb, Float> entry : toExplode.entrySet()) {
+			for (Iterator<HashMap.Entry<Bomb, Float>> iter = toExplode.entrySet().iterator();
+					iter.hasNext();) {
+				HashMap.Entry<Bomb, Float> entry = iter.next();
 				Bomb bomb = entry.getKey();
 				@SuppressWarnings("rawtypes")
 				Animation a = bomb.getAnimation();
@@ -266,26 +203,17 @@ public class PlayScreen implements Screen {
 						bomb.getCell().setTile(null); // last frame in animation should be empty
 
 				} else { // else if the animation is finished
-					toExplode.remove(bomb);
+					iter.remove();
 				}
 			}
-		}
 	}
 
 	public void updateCoins() {
-		hud.updateCoins(10);
+		progressBar.updateCoins(1);
 	}
 
 	public void updateLives() {
-		hud.updateLives();
-	}
-
-	public void updateCoinsP2() {
-		hud2.updateCoins(10);
-	}
-
-	public void updateLivesP2() {
-		hud2.updateLives();
+		progressBar.updateLives();
 	}
 
 	@Override
@@ -307,22 +235,21 @@ public class PlayScreen implements Screen {
 		game.batch.setProjectionMatrix(gamecam.combined); // render only what the game camera can see
 		game.batch.begin();
 		player.draw(game.batch); // draw
-		player2.draw(game.batch);
 		game.batch.end();
 
 		// Set our batch to now draw what the hud camera sees
-		game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
-		hud.stage.draw();
+//		game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
+//		hud.stage.draw();
 
-		game.batch.setProjectionMatrix(hud2.stage.getCamera().combined);
-		hud2.stage.draw();
-
+//		game.batch.setProjectionMatrix(hud2.stage.getCamera().combined);
+//		hud2.stage.draw();
+		
+		progressBar.draw();
+		
 		if (gameOver()) {
 			game.setScreen(new GameOverScreen(game));
 			dispose();
-		}
-
-		else if (gameFinished()) {
+		} else if (gameFinished()) {
 			game.setScreen(new GameFinishedScreen(game));
 			dispose();
 		}
@@ -356,7 +283,6 @@ public class PlayScreen implements Screen {
 		world.dispose();
 		b2dr.dispose();
 		hud.dispose();
-		hud2.dispose();
 	}
 
 	public TextureAtlas getAtlas() {
@@ -365,37 +291,22 @@ public class PlayScreen implements Screen {
 
 	// TEMP
 	private boolean gameOver() {
-		if (clientID == MPServer.playerCount.get(0)) {
-			return (player.currentState == Rooster.State.DEAD && player.getStateTimer() > 3);
-		}
-		if (clientID == MPServer.playerCount.get(1)) {
-			return (player2.currentState == Rooster.State.DEAD && player2.getStateTimer() > 3);
-		}
-		return false;
+		coins = hud.getCoins();
+		score = hud.getScore();
+		return (player.currentState == Rooster.State.DEAD && player.getStateTimer() > 3);
 	}
 
 	private boolean gameFinished() {
-
-		if (clientID == MPServer.playerCount.get(0)) {
-			return (player.currentState == Rooster.State.WON);
-		}
-		if (clientID == MPServer.playerCount.get(1)) {
-			return (player2.currentState == Rooster.State.WON);
-		}
-		return false;
+		return (player.currentState == Rooster.State.WON);
 	}
 
 	public void makeBombExplode(Bomb bomb) {
 		float startTime = Gdx.graphics.getDeltaTime();
 		toExplode.put(bomb, startTime);
 	}
-	
+
 	public void resetJumpCount1() {
-		jumpCount1 = 0;
-	}
-	
-	public void resetJumpCount2() {
-		jumpCount2 = 0;
+		jumpCount = 0;
 	}
 
 }

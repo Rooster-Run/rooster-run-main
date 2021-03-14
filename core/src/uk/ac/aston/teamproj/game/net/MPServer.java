@@ -1,115 +1,96 @@
 package uk.ac.aston.teamproj.game.net;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
+import uk.ac.aston.teamproj.game.net.packet.CreateGameSession;
+import uk.ac.aston.teamproj.game.net.packet.JoinGameSession;
 import uk.ac.aston.teamproj.game.net.packet.Login;
-import uk.ac.aston.teamproj.game.net.packet.MovementJump;
-import uk.ac.aston.teamproj.game.net.packet.MovementLeft;
-import uk.ac.aston.teamproj.game.net.packet.MovementP2Jump;
-import uk.ac.aston.teamproj.game.net.packet.MovementP2Left;
-import uk.ac.aston.teamproj.game.net.packet.MovementP2Right;
-import uk.ac.aston.teamproj.game.net.packet.MovementRight;
-
 
 public class MPServer {
-	
-	public static Server server;
-	public static ArrayList<Integer> playerCount;
-	public static boolean online;
-	public static float impulse;
-	public static float impulse2;
-	public static float timer;
-	
-	public static final float DEFAULT_SPEED = 0.8f;
-	public static final float SLOW_SPEED = 0.4f;
-	public static final float FAST_SPEED = 1.6f;
-	/**
-	 * Constructor
-	 * @param args
-	 */
-	public MPServer() throws IOException {
-		playerCount = new ArrayList<>();
-		timer = 0;
-		playerCount.add(1);
-		playerCount.add(2);
-		server = new Server() {
-			protected Connection newConnection() {
-				return new PlayerConnection();
-			}
-		};
-		online = true;
-		impulse = DEFAULT_SPEED;
-		impulse2 = DEFAULT_SPEED;
+
+	public Server server;
+	public ArrayList<GameSession> sessions;
+		
+	public MPServer() {
+		server = new Server();
+		server.start();
 		
 		Network.register(server);
-
+		
+		sessions = new ArrayList<>();
+				
+		try {
+			server.bind(Network.TCP_PORT, Network.UDP_PORT);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
 		server.addListener(new Listener() {
-
-			public void received(Connection c, Object object) {
+			public void connected(Connection connection) {
 				
-				PlayerConnection connection = (PlayerConnection) c;
-				
-				if(object instanceof Login) {
-					
-					/*
-					 * Please keep in mind we are assuming two player's here hence we are adding the integer
-					 * values 1 and 2 prematurely. In the future we should be parsing in client.getID(). 
-					 * 
-					 * For now we avoided a NullPointerException. 
-					 * Consult Chanveer if changing this method.
-					 */
-					
-					Login packet = (Login) object;
-					System.out.println("[" + packet.id + "] " + packet.name + " has entered the game.");
-				}
-				
-				if(object instanceof MovementJump) {
-					MovementJump pos = (MovementJump) object;
-					server.sendToAllTCP(pos);
-				}
-				
-				if(object instanceof MovementLeft) {
-					MovementLeft pos = (MovementLeft) object;
-					pos.impulse = impulse;
-					server.sendToAllTCP(pos);
-				}
-				
-				if(object instanceof MovementRight) {
-					MovementRight pos = (MovementRight) object;
-					pos.impulse = impulse;
-					server.sendToAllTCP(pos);
-				}
-				
-				if(object instanceof MovementP2Jump) {
-					MovementP2Jump pos = (MovementP2Jump) object;
-					server.sendToAllTCP(pos);
-				}
-				
-				if(object instanceof MovementP2Right) {
-					MovementP2Right pos = (MovementP2Right) object;
-					pos.impulse = impulse2;
-					server.sendToAllTCP(pos);
-				}
-				
-				if(object instanceof MovementP2Left) {
-					MovementP2Left pos = (MovementP2Left) object;
-					pos.impulse = impulse2;
-					server.sendToAllTCP(pos);
-				}
 			}
 			
-		});
-		
-		server.bind(Network.TCP_PORT, Network.UDP_PORT);
-		server.start();
+			public void received(Connection connection, Object object) {
+				
+				if(object instanceof Login) {
+					Login packet = (Login) object;
+					packet.id = connection.getID();
+					server.sendToTCP(connection.getID(), packet);
+				}
+				
+				if(object instanceof CreateGameSession) {
+					// make a token and store the game ID to that connection
+					// its 4am check this over when im awake
+					CreateGameSession packet = (CreateGameSession) object;
+					String token = generateGameToken();
+					packet.token = token;
+					GameSession session = new GameSession(token);
+					session.addPlayer(connection.getID(), packet.name);
+					session.setHost(connection.getID());
+					sessions.add(session);
+					
+					server.sendToTCP(connection.getID(), packet);
+				}
+				
+				if(object instanceof JoinGameSession) {
+					// get his token and see if exists
+					JoinGameSession packet = (JoinGameSession) object;
+
+					for(GameSession session: sessions) {
+						if(session.getToken().equals(packet.token)) {
+							session.addPlayer(connection.getID(), packet.name);
+							packet.host = session.getHost();
+							server.sendToTCP(connection.getID(), packet);
+							break;
+						}
+					}
+
+					// if it does put him into the same lobby
+					// if not its an invalid token
+				}
+			}
+		});	
 	}
 	
-	public static class PlayerConnection extends Connection {
-		public String name;
+	public String generateGameToken() {
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder salt = new StringBuilder();
+        Random rnd = new Random();
+        while (salt.length() < 18) { // length of the random string.
+            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+            salt.append(SALTCHARS.charAt(index));
+        }
+        String saltStr = salt.toString();
+        return saltStr;
+	}
+	
+	public static void main(String[] args) {
+//		Log.set(Log.LEVEL_DEBUG);
+		new MPServer();
 	}
 }

@@ -3,17 +3,22 @@ package uk.ac.aston.teamproj.game.screens;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import uk.ac.aston.teamproj.game.MainGame;
+import uk.ac.aston.teamproj.game.scenes.Hud;
 
 /**
  * 
@@ -30,6 +35,9 @@ public class GameOverScreen implements Screen {
 	private Game game;
 	
 	public GameOverScreen(Game game) {
+		Sound sound = Gdx.audio.newSound(Gdx.files.internal("gameover.mp3"));
+        sound.play(1F);
+		
 		this.game = game;
 		viewport = new FitViewport(MainGame.V_WIDTH/6, MainGame.V_HEIGHT/6, new OrthographicCamera());
 		stage = new Stage(viewport, ((MainGame) game).batch);
@@ -40,13 +48,19 @@ public class GameOverScreen implements Screen {
 		table.center();
 		table.setFillParent(true);
 		
-		Label gameOverLabel = new Label ("GAME OVER", font);
-		Label playAgainLabel = new Label ("Click Screen to Play Again", font);
-		table.add(gameOverLabel).expandX();
-		table.row();
-		table.add(playAgainLabel).expandX().padTop(10f);
 		
+		Label playAgainLabel = new Label ("Click Screen to Play Again", font);
+		Label showScore = new Label (showCoins(), font);
+		
+		table.row();
+		table.add(playAgainLabel).expandX().padTop(80f);
+		table.row();
+		table.add(showScore).expandX();
 		stage.addActor(table);
+		
+		
+		Texture background = new Texture("buttons/untitled.png");
+		table.background(new TextureRegionDrawable(new TextureRegion(background)));
 	}
 	
 	@Override
@@ -54,12 +68,17 @@ public class GameOverScreen implements Screen {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	public String showCoins() {
+		return "Coins Collected: " + PlayScreen.coins;
+		
+	}
 
 	@Override
 	public void render(float delta) {
 		
 		if(Gdx.input.justTouched()) {
-			game.setScreen(new MenuScreen(( MainGame )game));
+			game.setScreen(new MultiplayerMenuScreen(( MainGame )game));
 			dispose();
 		}
 		

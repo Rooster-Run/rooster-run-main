@@ -12,7 +12,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 
 import uk.ac.aston.teamproj.game.MainGame;
-import uk.ac.aston.teamproj.game.screens.PlayScreen;
+import uk.ac.aston.teamproj.game.net.MPClient;
 
 /**
  * created by Parmo on 5.11.20 
@@ -54,7 +54,7 @@ public class Bomb extends InteractiveTileObject {
 		//for now, just log the event to the console
 	   	Sound sound = Gdx.audio.newSound(Gdx.files.internal("bomb.wav"));
         sound.play(1F);
-		Gdx.app.log(String.valueOf(PlayScreen.clientID), "Bomb hhh Collision");
+		Gdx.app.log(String.valueOf(MPClient.clientID), "Bomb Collision");
 	
 		//set category to destroyed bit
 		setCategoryFilter(MainGame.DESTROYED_BIT);

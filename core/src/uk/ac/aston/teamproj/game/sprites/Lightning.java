@@ -5,12 +5,10 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Ellipse;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.World;
 
 import uk.ac.aston.teamproj.game.MainGame;
-import uk.ac.aston.teamproj.game.net.MPServer;
-import uk.ac.aston.teamproj.game.screens.PlayScreen;
+import uk.ac.aston.teamproj.game.net.MPClient;
 
 public class Lightning extends InteractiveTileObjectCircular {
 
@@ -23,7 +21,7 @@ public class Lightning extends InteractiveTileObjectCircular {
 	
 	@Override
 	public void onHit() {
-		Gdx.app.log(String.valueOf(PlayScreen.clientID), "Lightning Collision");	
+		Gdx.app.log(String.valueOf(MPClient.clientID), "Lightning Collision");	
 	   	Sound sound = Gdx.audio.newSound(Gdx.files.internal("lightening.mp3"));
         sound.play(1F);
 		//set category to destroyed bit

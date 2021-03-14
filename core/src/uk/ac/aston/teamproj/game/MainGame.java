@@ -1,16 +1,9 @@
 package uk.ac.aston.teamproj.game;
 
-import java.io.IOException;
-
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-import uk.ac.aston.teamproj.game.net.MPServer;
 import uk.ac.aston.teamproj.game.screens.MainMenuScreen;
-import uk.ac.aston.teamproj.game.screens.MenuScreen;
-import uk.ac.aston.teamproj.game.screens.PlayScreen;
 
 public class MainGame extends Game {
 	
@@ -41,15 +34,7 @@ public class MainGame extends Game {
 
 	@Override
 	public void create () {
-		batch = new SpriteBatch();
-		
-		if(!MPServer.online)
-			try {
-				new MPServer();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-	
+		batch = new SpriteBatch();	
 		setScreen(new MainMenuScreen(this));
 	}
 	
@@ -67,9 +52,5 @@ public class MainGame extends Game {
 		 * Delegates render method to the play screen or whatever screen is active at that time.
 		 */
 		super.render();
-	
-
-	
-
 	}
 }

@@ -15,7 +15,6 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 
 import uk.ac.aston.teamproj.game.MainGame;
-import uk.ac.aston.teamproj.game.net.MPServer;
 import uk.ac.aston.teamproj.game.screens.PlayScreen;
 
 
@@ -63,14 +62,11 @@ public class Rooster extends Sprite {
 	
 	private int lives = 3;
 	private int coins = 0;
-	
-	private int clientID;
-	
+		
 	@SuppressWarnings("unchecked")
-	public Rooster(World world, PlayScreen screen, int clientID) {
+	public Rooster(World world, PlayScreen screen) {
 		super(screen.getAtlas().findRegion("new_chicken")); //pass the required texture region to the superclass
 		this.world = world;
-		this.clientID = clientID;
 		defineRooster();
 		
 		//set the rooster to be associated with this texture region
@@ -116,7 +112,7 @@ public class Rooster extends Sprite {
 		
 		if (!isDead) {
 			//check if rooster has fallen
-			if (b2body.getPosition().y < 0) {
+			if (b2body.getPosition().y < -10/MainGame.PPM) {
 				isDead = true;
 			}
 			
@@ -205,12 +201,8 @@ public class Rooster extends Sprite {
 		shape.setRadius(36 / MainGame.PPM);
 		
 		//set category bit (what this fixture is) and mask bit (what this fixture can collide with)
-		if (getID() == MPServer.playerCount.get(0)) {
-			fdef.filter.categoryBits = MainGame.ROOSTER_BIT;
-		}
-		if (getID() == MPServer.playerCount.get(1)) {
-			fdef.filter.categoryBits = MainGame.ROOSTER_BIT2;
-		}
+
+		fdef.filter.categoryBits = MainGame.ROOSTER_BIT;
 		//
 		fdef.filter.maskBits = MainGame.DEFAULT_BIT |
 				MainGame.BRICK_BIT | MainGame.BOMB_BIT |
@@ -321,10 +313,6 @@ public class Rooster extends Sprite {
 	
 	public void updateCoins(int value) {
 		coins += value;
-	}
-	
-	public int getID() {
-		return this.clientID;
 	}
 
 }
